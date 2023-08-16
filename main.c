@@ -35,6 +35,49 @@ char *get_line()
 	return (line);
 }
 
+void split_command(*command)
+{
+	int i = 0;
+	char *token, **tokens;
+	char *delimiters = " \n\t\r\a";
+
+	tokens = malloc(BUFFSIZE * sizeof(char *));
+
+	if (tokens == NULL)
+	{
+		perror("memory allocation error");
+		exit(EXIT_FAILURE);
+	}
+
+	token = strtok(command, delimiters);
+
+	while (token != NULL)
+	{
+		tokens[i] = token;
+		i++;
+		
+		if (i >= BUFFSIZE)
+		{
+			BUFFSIZE = BUFFSIZE * 2;
+			token_size = BUFFSIZE * sizeof(char *);
+			tokens = realloc(tokens, token_size);
+
+			if (tokens == NULL)
+			{
+				perror("memory allocation error");
+				exit(EXIT_FAILURE);
+			}
+		}
+		token = strtok(NULL, delimiters);
+	}
+	tokens[i] = NULL;
+	return (tokens);
+}
+	
+
+
+
+
 void interactive_mode(char *command)
 {
 	char *line;
@@ -44,4 +87,5 @@ void interactive_mode(char *command)
 	{
 		prompt();
 		line = get_line();
-	
+		tokens = split_command(line);
+
