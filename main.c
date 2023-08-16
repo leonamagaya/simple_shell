@@ -45,6 +45,3 @@ void interactive_mode(char *command)
 		prompt();
 		line = get_line();
 	
-
-
-
