@@ -16,7 +16,7 @@ int main(int argc, char *argv[], envp)
 void prompt()
 {
 	char prompt_str = "cisfun$ ";
-	write(STDIN_FILENO, prompt_str, sizeof(prompt_str) - 1);
+write(STDIN_FILENO, prompt_str, sizeof(prompt_str) - 1);
 }
 
 char *get_line()
