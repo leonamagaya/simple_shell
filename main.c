@@ -73,10 +73,6 @@ void split_command(*command)
 	tokens[i] = NULL;
 	return (tokens);
 }
-	
-
-
-
 
 void interactive_mode(char *command)
 {
@@ -88,4 +84,4 @@ void interactive_mode(char *command)
 		prompt();
 		line = get_line();
 		tokens = split_command(line);
-
+	
