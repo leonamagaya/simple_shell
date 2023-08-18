@@ -4,19 +4,19 @@
 
 int main(int argc, char *argv[], envp)
 {
-	int fd = STDIN_FILENO;
+	int fildes = STDIN_FILENO;
 
-	if (isatty(fd) == 1)
-		interactive_mode(args[argc - 1]);
+	if (isatty(fildes) == 1)
+		_interactive(args[argc - 1]);
 	else
-		non_interactive_mode(args[argc - 1]);
+		_non_interactive(args[argc - 1]);
 	return (0);
 }
 
 void prompt()
 {
-	char prompt_str = "cisfun$ ";
-write(STDIN_FILENO, prompt_str, sizeof(prompt_str) - 1);
+	char prompt_str = "$ ";
+	write(STDIN_FILENO, prompt_str, sizeof(prompt_str) - 1);
 }
 
 char *get_line()
@@ -54,27 +54,14 @@ void split_command(*command)
 	while (token != NULL)
 	{
 		tokens[i] = token;
-		i++;
-		
-		if (i >= BUFFSIZE)
-		{
-			BUFFSIZE = BUFFSIZE * 2;
-			token_size = BUFFSIZE * sizeof(char *);
-			tokens = realloc(tokens, token_size);
-
-			if (tokens == NULL)
-			{
-				perror("memory allocation error");
-				exit(EXIT_FAILURE);
-			}
-		}
+		i++;	
 		token = strtok(NULL, delimiters);
 	}
 	tokens[i] = NULL;
 	return (tokens);
 }
 
-void interactive_mode(char *command)
+void _interactive(char *command)
 {
 	char *line;
 	char **tokens;
@@ -84,4 +71,31 @@ void interactive_mode(char *command)
 		prompt();
 		line = get_line();
 		tokens = split_command(line);
-	
+		status = _execute(tokens, command);
+		free(line);
+		free(tokens);
+		
+		if (_status >= 0)
+			exit(_status);
+	}
+}
+
+void _non_interactive(char *command)
+{
+        char *line;
+        char **tokens;
+
+        while (1)
+        {
+                prompt();
+                line = get_line();
+                tokens = split_command(line);
+                status = _execute(tokens, command);
+                free(line);
+                free(tokens);
+
+                if (_status >= 0)
+                        exit(_status);
+        }
+}
+

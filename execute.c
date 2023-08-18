@@ -1,39 +1,41 @@
 #include "shell.h"
 
-int exit_func(char **args)
+int _exit(char **args)
 {
-    /* exit with status */
-    if (args[1])
-    {
-        return (atoi(args[1]));
-    }
-    /* exit success */
-    else
-    {
-        return (0);
-    }
+	int return_value;
+
+	if (args[1])
+	{
+		rerurn_value = atoi(args[1]);
+		return (return_value);
+	}
+	else
+	{
+		return (0);
+	}
 }
 
-int env_func(char **args)
+int _env(char **args)
 {
-    int i = 0;
-    args = environ;
-    while (args[i])
-    {
-        write(STDOUT_FILENO, environ[i], _strlen(environ[i]));
-        write(STDOUT_FILENO, "\n", 1);
-        i++;
-    }
-    return (-1);
+	int i = 0;
+	args = environ;
+	
+	while (args[i])
+	{
+		write(STDOUT_FILENO, environ[i], _strlen(environ[i]));
+		write(STDOUT_FILENO, "\n", 1);
+		i++;
+	}
+	return (-1);
 }
 
-int cd_func(char **args)
+int _cd(char **args)
 {
-	const char *error_message = "expected argument to \"cd\"\n";
+	char *error_message = "expected argument to \"cd\"\n";
+
 	if (args[1] == NULL)
 	{
-		const char *error_message = "expected argument to \"cd\"\n";
-		write(STDERR_FILENO, error_message, strlen(error_message));
+		write(STDERR_FILENO, error_message, _strlen(error_message));
 	}
 	else
 	{
@@ -55,11 +57,11 @@ int built_ins(char **argv, char *bi_name)
 	};
 
 	int (*built_ins_function[])(char **) = {
-		&exit_func,
-		&env_func,
-		&cd_func
+		&_exit,
+		&_env,
+		&_cd
 	};
-
+	
 	if (argv == NULL)
 		return (-1);
 
@@ -76,40 +78,71 @@ int built_ins(char **argv, char *bi_name)
 
 int system_call(char **args, char *name)
 {
-    char path[1024], *main_path = getenv("PATH"), *directory;
-    int index;
-    index = 0;
-    /* check if there is a pipe in the command*/
-    while (args[index] != NULL)
-    {
-        if (strcmp(args[index], "|") == 0)
-        {
-            return (pipe_func(args));
-        }
-               if ((strcmp(args[index], ";") == 0) || (strcmp(args[index], "&&") == 0))
+	char path[1024], *main_path = getenv("PATH"), *directory;
+	int i = 0;
+	
+	while (args[i] != NULL)
+	{
+		if (_strcmp(args[i], "|") == 0)
+			return (pipe_func(args));
+        
+               if ((_strcmp(args[i], ";") == 0) || (_strcmp(args[i], "&&") == 0))
                 {
                         return (semiColon_func(args));
                 }
-        index++;
-    }
-    if (access(args[0], X_OK) == 0)
+	       i++;
+	}
+	if (access(args[0], X_OK) == 0)
+	{
+		return (access_command(args[0], args));
+	}
+	
+	_strcpy(path, main_path);
+	directory = strtok(path, ":");
+	
+	while (directory != NULL)
+	{
+		char full_path[256];
+		_strcpy(full_path, directory);
+		_strcat(full_path, "/");
+		_strcat(full_path, args[0]);
+		
+		if (access(full_path, X_OK) == 0)
+		{
+			return (access_command(full_path, args));
+		}
+		directory = strtok(NULL, ":");
+	}
+	
+	perror(name);
+	return (-1);
+}
+
+int _execute(char *full_path, char **args)
+{
+    pid_t pid, ended_pid;
+    int status, execve_status;
+    pid = fork();
+    if (pid == 0)
     {
-        return (access_command(args[0], args));
-    }
-    strcpy(path, main_path);
-    directory = strtok(path, ":");
-    while (directory != NULL)
-    {
-        char full_path[256];
-        strcpy(full_path, directory);
-        strcat(full_path, "/");
-        strcat(full_path, args[0]);
-        if (access(full_path, X_OK) == 0)
+        execve_status = execve(full_path, args, environ);
+        if (execve_status == -1)
         {
-            return (access_command(full_path, args));
+            return (-1);
         }
-        directory = strtok(NULL, ":");
+    } else if (pid > 0)
+    {
+        /*parent process */
+        ended_pid = waitpid(pid, &status, WUNTRACED);
+        if (ended_pid == -1)
+        {
+            perror("error while waiting for the child process to end");
+            return (-1);
+        }
+    } else
+    {
+        perror("fork failed");
+        return (-1);
     }
-    perror(name);
     return (-1);
 }
